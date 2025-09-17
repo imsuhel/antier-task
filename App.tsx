@@ -1,131 +1,215 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import {ActivityIndicator, LogBox, StatusBar, Text, View} from 'react-native';
+import React, {useEffect, useState} from 'react';
+// Import store and persistor
+import {persistor, store} from './src/store/store';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+import {Alert} from 'react-native';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+// Import screens
+import HomeScreen from './src/screens/HomeScreen';
+import {NavigationContainer} from '@react-navigation/native';
+import {PersistGate} from 'redux-persist/integration/react';
+import ProductDetailScreen from './src/screens/ProductDetailScreen';
+import {Provider} from 'react-redux';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
+// Import theme
+import colors from './src/theme/colors';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {enableScreens} from 'react-native-screens';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+// Enable screens for better performance
+enableScreens();
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+// Ignore specific warnings
+LogBox.ignoreLogs([
+  'Non-serializable values were found in the navigation state',
+  'VirtualizedLists should never be nested',
+]);
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+// Create stack navigator
+const Stack = createNativeStackNavigator();
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+// Error boundary component
+class ErrorBoundary extends React.Component<
+  {children: React.ReactNode},
+  {hasError: boolean}
+> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = {hasError: false};
+  }
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+  static getDerivedStateFromError() {
+    return {hasError: true};
+  }
 
-  /*
-   * To keep the template simple and small we're adding padding to prevent view
-   * from rendering under the System UI.
-   * For bigger apps the reccomendation is to use `react-native-safe-area-context`:
-   * https://github.com/AppAndFlow/react-native-safe-area-context
-   *
-   * You can read more about it here:
-   * https://github.com/react-native-community/discussions-and-proposals/discussions/827
-   */
-  const safePadding = '5%';
+  componentDidCatch(error: Error) {
+    console.error('App Error Boundary caught an error:', error);
+  }
 
-  return (
-    <View style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        style={backgroundStyle}>
-        <View style={{paddingRight: safePadding}}>
-          <Header/>
-        </View>
+  render() {
+    if (this.state.hasError) {
+      return (
         <View
           style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            paddingHorizontal: safePadding,
-            paddingBottom: safePadding,
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: colors.background,
           }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+          <Text style={{color: colors.error, fontSize: 18, marginBottom: 20}}>
+            Something went wrong
+          </Text>
+          <Text
+            style={{
+              color: colors.onBackground,
+              textAlign: 'center',
+              paddingHorizontal: 20,
+            }}>
+            The app encountered an error. Please restart the application.
+          </Text>
         </View>
-      </ScrollView>
-    </View>
-  );
+      );
+    }
+
+    return this.props.children;
+  }
 }
 
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+const App = () => {
+  const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Initialize any app-wide setup here
+    const initializeApp = async () => {
+      try {
+        // Add any async initialization here
+        setIsReady(true);
+      } catch (err) {
+        console.error('App initialization error:', err);
+        setError('Failed to initialize the app. Please try again.');
+        setIsReady(true); // Still set ready to show error UI
+      }
+    };
+
+    initializeApp();
+  }, []);
+
+  if (!isReady) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: colors.background,
+        }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: colors.background,
+          padding: 20,
+        }}>
+        <Text
+          style={{
+            color: colors.error,
+            fontSize: 18,
+            marginBottom: 20,
+            textAlign: 'center',
+          }}>
+          {error}
+        </Text>
+        <Text style={{color: colors.onBackground, textAlign: 'center'}}>
+          Please try again or restart the application.
+        </Text>
+        <Text
+          style={{
+            color: colors.onBackground,
+            textAlign: 'center',
+            marginTop: 20,
+          }}
+          onPress={() => Alert.alert('Error', error)}>
+          View error details
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{flex: 1}}>
+        <Provider store={store}>
+          <PersistGate
+            loading={
+              <View
+                style={{
+                  flex: 1,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: colors.background,
+                }}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={{marginTop: 10, color: colors.onBackground}}>
+                  Loading your data...
+                </Text>
+              </View>
+            }
+            persistor={persistor}
+            onBeforeLift={() => {
+              // This runs after rehydration is complete
+              console.log('Redux store rehydrated');
+            }}>
+            <SafeAreaProvider>
+              <NavigationContainer>
+                <StatusBar
+                  barStyle="light-content"
+                  backgroundColor={colors.background}
+                />
+                <Stack.Navigator
+                  screenOptions={{
+                    headerStyle: {
+                      backgroundColor: colors.surface,
+                    },
+                    headerTintColor: colors.onSurface,
+                    headerTitleStyle: {
+                      color: colors.onSurface,
+                    },
+                    contentStyle: {
+                      backgroundColor: colors.background,
+                    },
+                  }}>
+                  <Stack.Screen
+                    name="Home"
+                    component={HomeScreen}
+                    options={{
+                      title: 'Products',
+                    }}
+                  />
+                  <Stack.Screen
+                    name="ProductDetail"
+                    component={ProductDetailScreen}
+                    options={{
+                      title: '',
+                    }}
+                  />
+                </Stack.Navigator>
+              </NavigationContainer>
+            </SafeAreaProvider>
+          </PersistGate>
+        </Provider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
+  );
+};
 
 export default App;
