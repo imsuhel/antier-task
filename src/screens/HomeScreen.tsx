@@ -163,8 +163,10 @@ const HomeScreen = () => {
 
   // Handle category selection
   const handleCategorySelect = (category: string | null) => {
+    // Clear search state
     setSearchText('');
     dispatch(setSearchQuery(''));
+    setIsSearching(false);
 
     // Fetch products for the selected category
     if (category) {

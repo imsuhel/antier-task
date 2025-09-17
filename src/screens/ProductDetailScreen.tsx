@@ -34,11 +34,9 @@ interface ProductDetailScreenProps {
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const IMAGE_SIZE = SCREEN_WIDTH - 32;
 
-const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
-  route,
-  navigation,
-}) => {
+const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({route}) => {
   const {product} = route.params;
+  const [selectedImage, setSelectedImage] = React.useState(product.images[0]);
 
   // Format price with discount
   const formatPrice = (price: number, discount: number) => {
@@ -63,7 +61,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
         {/* Product Images Carousel */}
         <View style={styles.imageContainer}>
           <FastImage
-            source={{uri: product.thumbnail}}
+            source={{uri: selectedImage}}
             style={styles.mainImage}
             resizeMode={FastImage.resizeMode.contain}
           />
@@ -74,12 +72,19 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.thumbnailsContainer}>
             {product.images.map((image, index) => (
-              <FastImage
+              <TouchableOpacity
                 key={index}
-                source={{uri: image}}
-                style={styles.thumbnail}
-                resizeMode={FastImage.resizeMode.cover}
-              />
+                onPress={() => setSelectedImage(image)}
+                style={[
+                  styles.thumbnailContainer,
+                  selectedImage === image && styles.selectedThumbnail,
+                ]}>
+                <FastImage
+                  source={{uri: image}}
+                  style={styles.thumbnail}
+                  resizeMode={FastImage.resizeMode.cover}
+                />
+              </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
@@ -192,13 +197,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: moderateScale(16),
     paddingTop: moderateScale(8),
   },
+  thumbnailContainer: {
+    marginRight: moderateScale(8),
+    borderRadius: moderateScale(8),
+    borderWidth: 1,
+    borderColor: 'transparent',
+    padding: moderateScale(2),
+  },
+  selectedThumbnail: {
+    borderColor: colors.primary,
+  },
   thumbnail: {
     width: moderateScale(60),
     height: moderateScale(60),
-    borderRadius: moderateScale(8),
-    marginRight: moderateScale(8),
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: moderateScale(6),
   },
   infoContainer: {
     padding: moderateScale(16),
