@@ -1,5 +1,12 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { Product } from '../types';
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios';
+
+import {Product} from '../types';
 
 const BASE_URL = 'https://dummyjson.com';
 
@@ -9,22 +16,19 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 20000,
 });
 
 // Request interceptor
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // You can add auth token here if needed
-    // const token = getToken();
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+
     return config;
   },
   (error: AxiosError) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor
@@ -48,7 +52,7 @@ apiClient.interceptors.response.use(
       console.error('Request error:', error.message);
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Define API response types
@@ -60,11 +64,17 @@ interface ProductsResponse {
 }
 
 // API methods
-export const getProducts = async (page: number = 0, limit: number = 10, category?: string): Promise<Product[]> => {
+export const getProducts = async (
+  page: number = 0,
+  limit: number = 10,
+  category?: string,
+): Promise<Product[]> => {
   try {
     let url = `/products?limit=${limit}&skip=${page * limit}`;
     if (category) {
-      url = `/products/category/${category}?limit=${limit}&skip=${page * limit}`;
+      url = `/products/category/${category}?limit=${limit}&skip=${
+        page * limit
+      }`;
     }
     const response = await apiClient.get<ProductsResponse>(url);
     return response.data.products || [];
@@ -94,10 +104,14 @@ export const getCategories = async (): Promise<string[]> => {
   }
 };
 
-export const getProductsByCategory = async (category: string): Promise<{ products: Product[] }> => {
+export const getProductsByCategory = async (
+  category: string,
+): Promise<{products: Product[]}> => {
   try {
-    const response = await apiClient.get<ProductsResponse>(`/products/category/${category}`);
-    return { products: response.data.products || [] };
+    const response = await apiClient.get<ProductsResponse>(
+      `/products/category/${category}`,
+    );
+    return {products: response.data.products || []};
   } catch (error) {
     console.error(`Error fetching products for category ${category}:`, error);
     throw error;
@@ -107,7 +121,7 @@ export const getProductsByCategory = async (category: string): Promise<{ product
 export const searchProducts = async (query: string): Promise<Product[]> => {
   try {
     const response = await apiClient.get<ProductsResponse>(
-      `/products/search?q=${encodeURIComponent(query)}`
+      `/products/search?q=${encodeURIComponent(query)}`,
     );
     return response.data.products || [];
   } catch (error) {

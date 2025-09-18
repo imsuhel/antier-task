@@ -1,5 +1,5 @@
-import { Dispatch } from 'redux';
-import { Product } from '../../types';
+import {Dispatch} from 'redux';
+import {Product} from '../../types';
 
 declare module '../store/actions/productActions' {
   export function fetchCategories(): any;
